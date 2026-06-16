@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Flask uploads & transcripts (runtime generated)
+task 1/speech-to-text-web/uploads/
+task 1/speech-to-text-web/transcripts/
+
+# Test audio files (optional — remove if you want to keep them)
+task 1/speech-to-text-web/test.mp3
+task 1/speech-to-text-web/test.wav
+task 1/speech-to-text-web/test_roundtrip.mp3
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
