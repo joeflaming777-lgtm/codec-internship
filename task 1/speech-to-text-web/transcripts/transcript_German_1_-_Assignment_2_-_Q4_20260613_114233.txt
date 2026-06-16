@@ -1,0 +1,10 @@
+Speech-to-Text Transcript
+========================================
+Date       : 2026-06-13 11:42:33
+Source File: German_1_-_Assignment_2_-_Q4.mp3
+Language   : English (US)
+Word Count : 2
+Char Count : 12
+========================================
+
+5050 science

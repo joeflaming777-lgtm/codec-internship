@@ -1,0 +1,5 @@
+flask>=3.0.0
+SpeechRecognition>=3.10.4
+pydub>=0.25.1
+werkzeug>=3.0.0
+imageio-ffmpeg>=0.5.0   # bundles ffmpeg binary — MP3 works without a system install

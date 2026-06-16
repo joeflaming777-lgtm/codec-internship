@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEO Meta Tags -->
+  <title>VoiceScript — Speech to Text Transcription</title>
+  <meta name="description"
+        content="Convert speech from WAV and MP3 audio files to text instantly. Supports English and Tamil. Powered by Google Web Speech API." />
+  <meta name="keywords"
+        content="speech to text, transcription, audio to text, voice recognition, English, Tamil" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       HEADER / NAVIGATION
+  ═══════════════════════════════════════════ -->
+  <header class="header" role="banner">
+    <nav class="nav container" aria-label="Main navigation">
+      <div class="nav__brand">
+        <span class="nav__icon" aria-hidden="true">🎙️</span>
+        <span class="nav__title">VoiceScript</span>
+      </div>
+      <div class="nav__badge">Powered by Google Speech API</div>
+    </nav>
+  </header>
+
+  <main id="main-content">
+
+    <!-- ═══════════════════════════════════════════
+         HERO SECTION
+    ═══════════════════════════════════════════ -->
+    <section class="hero" aria-labelledby="hero-heading">
+      <div class="container hero__inner">
+
+        <!-- Animated background blobs -->
+        <div class="hero__blob hero__blob--1" aria-hidden="true"></div>
+        <div class="hero__blob hero__blob--2" aria-hidden="true"></div>
+        <div class="hero__blob hero__blob--3" aria-hidden="true"></div>
+
+        <div class="hero__content">
+          <div class="hero__badge" aria-label="New feature badge">
+            <span class="hero__badge-dot" aria-hidden="true"></span>
+            Free &amp; Accurate Transcription
+          </div>
+
+          <h1 id="hero-heading" class="hero__heading">
+            Transform <span class="hero__heading-accent">Speech</span>
+            <br />Into Text, Instantly
+          </h1>
+
+          <p class="hero__subtext">
+            Upload your audio file and get a precise transcript in seconds.
+            Supports English &amp; Tamil with real-time statistics.
+          </p>
+
+          <!-- Scroll cue -->
+          <a href="#upload-section" class="hero__cta" aria-label="Start transcribing">
+            Start Transcribing
+            <span class="hero__cta-arrow" aria-hidden="true">↓</span>
+          </a>
+        </div>
+
+        <!-- Stats bar -->
+        <div class="hero__stats" role="list" aria-label="App statistics">
+          <div class="hero__stat" role="listitem">
+            <span class="hero__stat-value">2</span>
+            <span class="hero__stat-label">Languages</span>
+          </div>
+          <div class="hero__stat-divider" aria-hidden="true"></div>
+          <div class="hero__stat" role="listitem">
+            <span class="hero__stat-value">50 MB</span>
+            <span class="hero__stat-label">Max File Size</span>
+          </div>
+          <div class="hero__stat-divider" aria-hidden="true"></div>
+          <div class="hero__stat" role="listitem">
+            <span class="hero__stat-value">WAV &amp; MP3</span>
+            <span class="hero__stat-label">Formats</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         UPLOAD SECTION
+    ═══════════════════════════════════════════ -->
+    <section id="upload-section" class="upload-section" aria-labelledby="upload-heading">
+      <div class="container">
+
+        <div class="section-header">
+          <h2 id="upload-heading" class="section-title">Upload Your Audio</h2>
+          <p class="section-sub">Drag &amp; drop or click to select a .wav or .mp3 file</p>
+        </div>
+
+        <!-- ── Upload Form ── -->
+        <form id="transcribe-form"
+              enctype="multipart/form-data"
+              novalidate
+              aria-label="Audio transcription form">
+
+          <!-- Drop Zone -->
+          <div id="drop-zone"
+               class="drop-zone"
+               role="button"
+               tabindex="0"
+               aria-label="Audio file upload area. Press Enter or Space to open file browser."
+               aria-describedby="drop-zone-hint">
+
+            <div class="drop-zone__icon" aria-hidden="true">
+              <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="2" opacity=".2"/>
+                <path d="M32 44V24M32 24L24 32M32 24L40 32" stroke="currentColor" stroke-width="2.5"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M20 44H44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+
+            <p class="drop-zone__title">Drop your audio file here</p>
+            <p id="drop-zone-hint" class="drop-zone__hint">Supports WAV &amp; MP3 · Max 50 MB</p>
+
+            <!-- Hidden file input -->
+            <input type="file"
+                   id="audio-input"
+                   name="audio"
+                   accept=".wav,.mp3"
+                   class="drop-zone__input"
+                   aria-label="Select audio file"
+                   required />
+          </div>
+
+          <!-- Selected file info -->
+          <div id="file-info" class="file-info" hidden aria-live="polite">
+            <div class="file-info__icon" aria-hidden="true">🎵</div>
+            <div class="file-info__details">
+              <span id="file-name" class="file-info__name"></span>
+              <span id="file-size" class="file-info__size"></span>
+            </div>
+            <button type="button"
+                    id="remove-file"
+                    class="file-info__remove"
+                    aria-label="Remove selected file">✕</button>
+          </div>
+
+          <!-- Controls row -->
+          <div class="controls-row">
+
+            <!-- Language selector -->
+            <div class="form-group">
+              <label for="language-select" class="form-label">
+                <span aria-hidden="true">🌐</span> Language
+              </label>
+              <div class="select-wrapper">
+                <select id="language-select"
+                        name="language"
+                        class="form-select"
+                        aria-label="Select transcription language">
+                  <option value="en-US">🇺🇸 English (en-US)</option>
+                  <option value="ta-IN">🇮🇳 Tamil (ta-IN)</option>
+                </select>
+                <span class="select-arrow" aria-hidden="true">▾</span>
+              </div>
+            </div>
+
+            <!-- Submit button -->
+            <button type="submit"
+                    id="transcribe-btn"
+                    class="btn btn--primary"
+                    aria-label="Transcribe audio file">
+              <span class="btn__icon" aria-hidden="true">▶</span>
+              <span class="btn__label">Transcribe</span>
+            </button>
+
+          </div>
+
+        </form><!-- /transcribe-form -->
+
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         LOADING INDICATOR (hidden by default)
+    ═══════════════════════════════════════════ -->
+    <div id="loading-overlay"
+         class="loading-overlay"
+         hidden
+         role="status"
+         aria-live="polite"
+         aria-label="Transcribing audio, please wait">
+      <div class="loading-card">
+        <div class="loading-wave" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <p class="loading-text">Transcribing your audio…</p>
+        <p class="loading-sub">Contacting Google Speech API</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         ERROR BANNER (hidden by default)
+    ═══════════════════════════════════════════ -->
+    <div id="error-banner"
+         class="error-banner"
+         hidden
+         role="alert"
+         aria-live="assertive">
+      <span class="error-banner__icon" aria-hidden="true">⚠️</span>
+      <span id="error-message" class="error-banner__text"></span>
+      <button type="button"
+              id="dismiss-error"
+              class="error-banner__close"
+              aria-label="Dismiss error">✕</button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         RESULTS SECTION (hidden by default)
+    ═══════════════════════════════════════════ -->
+    <section id="results-section"
+             class="results-section"
+             hidden
+             aria-labelledby="results-heading">
+      <div class="container">
+
+        <div class="section-header">
+          <h2 id="results-heading" class="section-title">
+            <span aria-hidden="true">✅</span> Transcript Ready
+          </h2>
+          <p id="results-language" class="section-sub" aria-live="polite"></p>
+        </div>
+
+        <!-- Statistics cards -->
+        <div class="stats-grid" role="list" aria-label="Transcript statistics">
+
+          <div class="stat-card" role="listitem">
+            <div class="stat-card__icon" aria-hidden="true">📝</div>
+            <div class="stat-card__value" id="stat-words" aria-label="Word count">0</div>
+            <div class="stat-card__label">Words</div>
+          </div>
+
+          <div class="stat-card" role="listitem">
+            <div class="stat-card__icon" aria-hidden="true">🔡</div>
+            <div class="stat-card__value" id="stat-chars" aria-label="Character count">0</div>
+            <div class="stat-card__label">Characters</div>
+          </div>
+
+          <div class="stat-card" role="listitem">
+            <div class="stat-card__icon" aria-hidden="true">⏱️</div>
+            <div class="stat-card__value" id="stat-time" aria-label="Reading time">0 min</div>
+            <div class="stat-card__label">Read Time</div>
+          </div>
+
+        </div>
+
+        <!-- Transcript text box -->
+        <div class="transcript-box" aria-label="Transcript output area">
+          <div class="transcript-box__header">
+            <span class="transcript-box__title">Transcript</span>
+            <button type="button"
+                    id="copy-btn"
+                    class="btn btn--ghost btn--sm"
+                    aria-label="Copy transcript to clipboard">
+              <span aria-hidden="true">📋</span> Copy
+            </button>
+          </div>
+          <div id="transcript-output"
+               class="transcript-box__content"
+               role="textbox"
+               aria-readonly="true"
+               aria-multiline="true"
+               aria-label="Transcript text"
+               tabindex="0">
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="result-actions">
+          <button type="button"
+                  id="download-btn"
+                  class="btn btn--primary"
+                  aria-label="Download transcript as text file">
+            <span aria-hidden="true">⬇️</span> Download .txt
+          </button>
+          <button type="button"
+                  id="new-transcription-btn"
+                  class="btn btn--secondary"
+                  aria-label="Start a new transcription">
+            <span aria-hidden="true">🔄</span> New Transcription
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════ -->
+  <footer class="footer" role="contentinfo">
+    <div class="container footer__inner">
+      <p class="footer__copy">
+        © 2025 VoiceScript · Built with Flask &amp; Google Web Speech API
+      </p>
+      <p class="footer__note">Supports English (en-US) &amp; Tamil (ta-IN)</p>
+    </div>
+  </footer>
+
+  <!-- Toast notification -->
+  <div id="toast"
+       class="toast"
+       role="status"
+       aria-live="polite"
+       aria-atomic="true"
+       hidden></div>
+
+  <!-- JavaScript -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+</html>

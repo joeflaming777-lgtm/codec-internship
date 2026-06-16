@@ -1,0 +1,10 @@
+Speech-to-Text Transcript
+========================================
+Date       : 2026-06-16 19:56:12
+Source File: sample-speech-1m.wav
+Language   : English (US)
+Word Count : 38
+Char Count : 250
+========================================
+
+digital formats whether you are a software developer testing file upload functionality a quality assurance engineer validating media players a student learning about digital formats or simply someone who needs a quick test files that you can download
