@@ -251,8 +251,8 @@ For production use, you can replace this with the **UCI SMS Spam Collection** or
 **Joe Flaming** &nbsp;![M](https://img.shields.io/badge/M-blue?style=flat-square)  
 Codec Technologies AI Intern — June 2026
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-blue?logo=linkedin&style=flat-square)](https://linkedin.com/in/joeflaming777)
-[![GitHub](https://img.shields.io/badge/GitHub-black?logo=github&style=flat-square)](https://github.com/joeflaming777)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-blue?logo=linkedin&style=flat-square)](https://www.linkedin.com/in/joe-flaming-563459405/)
+[![GitHub](https://img.shields.io/badge/GitHub-black?logo=github&style=flat-square)](https://github.com/joeflaming777-lgtm)
 
 ---
 
