@@ -255,7 +255,3 @@ Codec Technologies AI Intern — June 2026
 [![GitHub](https://img.shields.io/badge/GitHub-black?logo=github&style=flat-square)](https://github.com/joeflaming777-lgtm)
 
 ---
-
-## 📄 License
-
-This project is built for educational and portfolio purposes.
