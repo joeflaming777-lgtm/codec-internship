@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="SpamShield AI Email Analyzer – Paste email content and get instant ML-powered spam classification." />
+  <title>Email Analyzer – SpamShield AI</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <style>
+    /* Analyzer-specific styles */
+    .analyzer-page {
+      min-height: calc(100vh - 64px);
+      background: var(--grad-hero);
+      padding: var(--space-3xl) 0;
+    }
+
+    .analyzer-header {
+      text-align: center;
+      margin-bottom: var(--space-2xl);
+    }
+
+    .analyzer-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: var(--space-xl);
+      align-items: start;
+    }
+
+    .example-grid {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-md);
+    }
+
+    .input-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-xs);
+    }
+
+    .meta-counts {
+      display: flex;
+      gap: var(--space-md);
+      font-family: var(--font-mono);
+    }
+
+    .submit-row {
+      display: flex;
+      gap: var(--space-md);
+      margin-top: var(--space-xl);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .scanning-indicator {
+      display: none;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: var(--text-sm);
+      color: var(--cyan);
+    }
+
+    .scanning-indicator.active { display: flex; }
+
+    .scan-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--cyan);
+      animation: scan-dot 1s infinite;
+    }
+
+    .scan-dot:nth-child(2) { animation-delay: 0.2s; }
+    .scan-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes scan-dot {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    .sidebar-card {
+      position: sticky;
+      top: calc(64px + 20px);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-sm) 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: var(--text-sm);
+    }
+
+    .info-row:last-child { border-bottom: none; }
+    .info-row-label { color: var(--text-muted); }
+    .info-row-value { font-weight: 600; font-family: var(--font-mono); }
+
+    .error-banner {
+      background: rgba(255,23,68,0.1);
+      border: 1px solid rgba(255,23,68,0.3);
+      border-radius: var(--radius-md);
+      padding: var(--space-md) var(--space-lg);
+      color: var(--red);
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-lg);
+    }
+
+    @media (max-width: 900px) {
+      .analyzer-grid { grid-template-columns: 1fr; }
+      .sidebar-card  { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar" role="navigation">
+  <div class="navbar-inner">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">🛡️</div>
+      <span class="nav-logo-text">SpamShield</span>
+      <span class="nav-logo-badge">AI</span>
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="/"          class="nav-link" data-page="home">🏠 Dashboard</a></li>
+      <li><a href="/analyzer"  class="nav-link active" data-page="analyzer">🔍 Analyzer</a></li>
+      <li><a href="/dashboard" class="nav-link" data-page="dashboard">📊 Analytics</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">☀️</button>
+      <button id="hamburger" class="hamburger" aria-label="Open menu">☰</button>
+    </div>
+  </div>
+</nav>
+
+<div id="mobile-menu" class="mobile-menu">
+  <a href="/"          class="nav-link" data-page="home">🏠 Dashboard</a>
+  <a href="/analyzer"  class="nav-link active">🔍 Analyzer</a>
+  <a href="/dashboard" class="nav-link" data-page="dashboard">📊 Analytics</a>
+</div>
+
+<main class="page-wrapper">
+  <div class="analyzer-page">
+    <div class="container">
+
+      <!-- Header -->
+      <div class="analyzer-header fade-in-up">
+        <div class="section-label">🔍 Email Analyzer</div>
+        <h1 class="section-title">
+          Analyze Your <span class="gradient-text">Email</span>
+        </h1>
+        <p class="section-subtitle" style="margin:0 auto;">
+          Paste email content below and our AI will classify it in milliseconds.
+        </p>
+      </div>
+
+      <!-- Error Banner -->
+      {% if error %}
+      <div class="error-banner">
+        ❌ {{ error }}
+      </div>
+      {% endif %}
+
+      <div class="analyzer-grid">
+
+        <!-- ── Main Input Panel ─────────────────────────────────────── -->
+        <div class="fade-in-up stagger-1">
+          <div class="card card-pad-lg">
+
+            <!-- Example Buttons -->
+            <div class="mb-lg">
+              <p class="form-label mb-sm">⚡ Load Example Email</p>
+              <div class="example-grid">
+                <button type="button" data-example="spam"
+                        class="btn btn-sm btn-danger" id="ex-spam-btn">
+                  🚨 Spam Example
+                </button>
+                <button type="button" data-example="ham"
+                        class="btn btn-sm btn-success" id="ex-ham-btn">
+                  ✅ Legitimate Example
+                </button>
+                <button type="button" data-example="phishing"
+                        class="btn btn-sm" id="ex-phishing-btn"
+                        style="background:rgba(255,109,0,0.15);color:#ff6d00;
+                               border:1px solid rgba(255,109,0,0.3);">
+                  🎣 Phishing Example
+                </button>
+              </div>
+            </div>
+
+            <!-- Form -->
+            <form id="analyze-form" method="POST" action="/analyzer" novalidate>
+              <div class="form-group">
+                <label for="email-input" class="form-label">
+                  📧 Email Content
+                  <span class="text-muted" style="font-weight:400;"> — paste the full email including subject line</span>
+                </label>
+
+                <div style="position:relative;">
+                  <textarea
+                    id="email-input"
+                    name="email_text"
+                    class="form-textarea"
+                    placeholder="Subject: Congratulations! You have won a free smartphone...
+
+Paste the full email content here (subject, body, any headers).
+You can also drag and drop a .txt file onto this box."
+                    rows="14"
+                    aria-label="Email content to analyze"
+                    autocomplete="off"
+                    spellcheck="false"
+                  ></textarea>
+                  <div class="scan-line" id="scan-line" style="display:none;"></div>
+                </div>
+
+                <!-- Meta row -->
+                <div class="input-meta">
+                  <div class="meta-counts">
+                    <span>chars: <strong id="char-count">0</strong></span>
+                    <span>words: <strong id="word-count">0</strong></span>
+                  </div>
+                  <div class="char-counter" id="char-counter">
+                    max 10,000 characters
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Row -->
+              <div class="submit-row">
+                <button type="submit" id="analyze-btn" class="btn btn-primary btn-lg">
+                  🔍 Analyze Email
+                </button>
+                <button type="button" id="clear-btn" class="btn btn-secondary btn-lg">
+                  🗑️ Clear
+                </button>
+                <div class="scanning-indicator" id="scanning-indicator">
+                  <div class="scan-dot"></div>
+                  <div class="scan-dot"></div>
+                  <div class="scan-dot"></div>
+                  <span>Scanning email…</span>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- ── Sidebar ───────────────────────────────────────────────── -->
+        <div class="sidebar-card fade-in-up stagger-2">
+
+          <!-- How It Works -->
+          <div class="card card-pad">
+            <h3 class="font-bold mb-lg" style="font-size:var(--text-base);">
+              ⚙️ How It Works
+            </h3>
+            <div class="reason-list">
+              <div class="reason-item">
+                <span class="reason-icon">1️⃣</span>
+                <span class="reason-text">Email text is cleaned &amp; normalised</span>
+              </div>
+              <div class="reason-item">
+                <span class="reason-icon">2️⃣</span>
+                <span class="reason-text">TF-IDF vectorizer converts text to numbers</span>
+              </div>
+              <div class="reason-item">
+                <span class="reason-icon">3️⃣</span>
+                <span class="reason-text">Naive Bayes classifier predicts label</span>
+              </div>
+              <div class="reason-item">
+                <span class="reason-icon">4️⃣</span>
+                <span class="reason-text">Explainer analyzes keywords &amp; patterns</span>
+              </div>
+              <div class="reason-item">
+                <span class="reason-icon">5️⃣</span>
+                <span class="reason-text">Results returned with confidence score</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Model Info -->
+          <div class="card card-pad">
+            <h3 class="font-bold mb-lg" style="font-size:var(--text-base);">
+              📊 Model Info
+            </h3>
+            <div class="info-row">
+              <span class="info-row-label">Algorithm</span>
+              <span class="info-row-value text-cyan">Naive Bayes</span>
+            </div>
+            <div class="info-row">
+              <span class="info-row-label">Vectorizer</span>
+              <span class="info-row-value text-purple">TF-IDF</span>
+            </div>
+            <div class="info-row">
+              <span class="info-row-label">Features</span>
+              <span class="info-row-value">5,000</span>
+            </div>
+            <div class="info-row">
+              <span class="info-row-label">n-grams</span>
+              <span class="info-row-value">(1, 2)</span>
+            </div>
+            <div class="info-row">
+              <span class="info-row-label">Status</span>
+              <span class="info-row-value text-green">✓ Loaded</span>
+            </div>
+          </div>
+
+          <!-- Quick Tips -->
+          <div class="card card-pad">
+            <h3 class="font-bold mb-md" style="font-size:var(--text-base);">💡 Tips</h3>
+            <ul style="display:flex;flex-direction:column;gap:8px;">
+              <li class="tip-card" style="padding:8px 12px;">
+                <span class="tip-icon" style="font-size:14px;">📝</span>
+                <span class="tip-text" style="font-size:var(--text-xs);">
+                  Include the subject line for better accuracy
+                </span>
+              </li>
+              <li class="tip-card" style="padding:8px 12px;">
+                <span class="tip-icon" style="font-size:14px;">🔗</span>
+                <span class="tip-text" style="font-size:var(--text-xs);">
+                  Include any URLs present in the email
+                </span>
+              </li>
+              <li class="tip-card" style="padding:8px 12px;">
+                <span class="tip-icon" style="font-size:14px;">📂</span>
+                <span class="tip-text" style="font-size:var(--text-xs);">
+                  Drag &amp; drop a .txt file onto the text area
+                </span>
+              </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-copy">🛡️ SpamShield AI — ML-Powered Email Security</div>
+      <div class="footer-links">
+        <a href="/" class="footer-link">Home</a>
+        <a href="/dashboard" class="footer-link">Analytics</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/analyzer.js') }}"></script>
+</body>
+</html>

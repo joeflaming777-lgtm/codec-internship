@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="SpamShield AI Analytics Dashboard – Visualize spam detection history, model performance and trends." />
+  <title>Analytics Dashboard – SpamShield AI</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    .dashboard-page {
+      min-height: calc(100vh - 64px);
+      background: var(--grad-hero);
+      padding: var(--space-3xl) 0;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-xl);
+    }
+
+    .chart-title {
+      font-size: var(--text-base);
+      font-weight: 700;
+      margin-bottom: var(--space-lg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-md);
+      padding: var(--space-2xl);
+      text-align: center;
+    }
+
+    .empty-state-icon { font-size: 48px; }
+    .empty-state-title { font-size: var(--text-xl); font-weight: 700; }
+    .empty-state-desc  { font-size: var(--text-sm); color: var(--text-muted); }
+
+    .history-controls {
+      display: flex;
+      gap: var(--space-sm);
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: var(--space-lg);
+    }
+
+    .history-controls .form-input {
+      max-width: 240px;
+    }
+
+    .history-controls select.form-input {
+      max-width: 160px;
+    }
+
+    .table-actions {
+      display: flex;
+      gap: var(--space-sm);
+      margin-left: auto;
+      flex-wrap: wrap;
+    }
+
+    .confidence-col { font-family: var(--font-mono); }
+
+    @media (max-width: 800px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Inject JSON data for JS -->
+<script id="dashboard-data" type="application/json">
+  {{ stats | tojson }}
+</script>
+<script id="history-data" type="application/json">
+  {{ history | tojson }}
+</script>
+<script id="metrics-data" type="application/json">
+  {{ model_metrics | tojson }}
+</script>
+
+<!-- Navigation -->
+<nav class="navbar" role="navigation">
+  <div class="navbar-inner">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">🛡️</div>
+      <span class="nav-logo-text">SpamShield</span>
+      <span class="nav-logo-badge">AI</span>
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="/"          class="nav-link" data-page="home">🏠 Dashboard</a></li>
+      <li><a href="/analyzer"  class="nav-link" data-page="analyzer">🔍 Analyzer</a></li>
+      <li><a href="/dashboard" class="nav-link active" data-page="dashboard">📊 Analytics</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">☀️</button>
+      <button id="hamburger" class="hamburger" aria-label="Open menu">☰</button>
+    </div>
+  </div>
+</nav>
+
+<div id="mobile-menu" class="mobile-menu">
+  <a href="/"          class="nav-link">🏠 Dashboard</a>
+  <a href="/analyzer"  class="nav-link">🔍 Analyzer</a>
+  <a href="/dashboard" class="nav-link active">📊 Analytics</a>
+</div>
+
+<main class="page-wrapper">
+  <div class="dashboard-page">
+    <div class="container">
+
+      <!-- Header -->
+      <div class="fade-in-up mb-2xl">
+        <div class="section-label">📊 Analytics</div>
+        <h1 class="section-title">
+          Detection <span class="gradient-text">Dashboard</span>
+        </h1>
+        <p class="section-subtitle">
+          Real-time analytics for your email scanning session.
+          {% if stats.total > 0 %}
+            {{ stats.total }} email{{ 's' if stats.total != 1 else '' }} analyzed.
+          {% endif %}
+        </p>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="grid-4 mb-2xl">
+        <div class="card card-pad stat-card fade-in-up stagger-1">
+          <div class="stat-card-header">
+            <div class="stat-card-icon cyan">📧</div>
+            <span class="stat-badge up">Session</span>
+          </div>
+          <div class="stat-value gradient-text">{{ stats.total }}</div>
+          <div class="stat-label">Total Scanned</div>
+        </div>
+
+        <div class="card card-pad stat-card fade-in-up stagger-2">
+          <div class="stat-card-header">
+            <div class="stat-card-icon red">🚨</div>
+            {% if stats.total > 0 %}
+              <span class="stat-badge down">{{ ((stats.spam / stats.total) * 100)|round(1) }}%</span>
+            {% else %}
+              <span class="stat-badge up">–</span>
+            {% endif %}
+          </div>
+          <div class="stat-value gradient-text-spam">{{ stats.spam }}</div>
+          <div class="stat-label">Spam Detected</div>
+        </div>
+
+        <div class="card card-pad stat-card fade-in-up stagger-3">
+          <div class="stat-card-header">
+            <div class="stat-card-icon green">✅</div>
+            {% if stats.total > 0 %}
+              <span class="stat-badge up">{{ ((stats.ham / stats.total) * 100)|round(1) }}%</span>
+            {% else %}
+              <span class="stat-badge up">–</span>
+            {% endif %}
+          </div>
+          <div class="stat-value gradient-text-safe">{{ stats.ham }}</div>
+          <div class="stat-label">Legitimate</div>
+        </div>
+
+        <div class="card card-pad stat-card fade-in-up stagger-4">
+          <div class="stat-card-header">
+            <div class="stat-card-icon purple">🎯</div>
+            <span class="stat-badge up">ML</span>
+          </div>
+          <div class="stat-value gradient-text">{{ model_metrics.accuracy }}%</div>
+          <div class="stat-label">Model Accuracy</div>
+        </div>
+      </div>
+
+      <!-- Charts Grid -->
+      {% if stats.total > 0 %}
+      <div class="charts-grid mb-2xl">
+
+        <!-- Donut Chart -->
+        <div class="card card-pad fade-in-up stagger-1">
+          <div class="chart-title">
+            🍩 Spam vs Legitimate
+            <span class="badge badge-cyan">Session</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-donut"></canvas>
+          </div>
+        </div>
+
+        <!-- Model Metrics Radar -->
+        <div class="card card-pad fade-in-up stagger-2">
+          <div class="chart-title">
+            🕸 Model Performance Radar
+            <span class="badge badge-purple">ML Metrics</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-metrics"></canvas>
+          </div>
+        </div>
+
+        <!-- History Line Chart -->
+        <div class="card card-pad fade-in-up stagger-3">
+          <div class="chart-title">
+            📈 Detection Timeline
+            <span class="badge badge-cyan">By Date</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-history"></canvas>
+          </div>
+        </div>
+
+        <!-- Confidence Distribution -->
+        <div class="card card-pad fade-in-up stagger-4">
+          <div class="chart-title">
+            📊 Spam Probability Distribution
+            <span class="badge badge-warn">Buckets</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-confidence"></canvas>
+          </div>
+        </div>
+
+      </div>
+      {% else %}
+      <!-- Empty Charts State -->
+      <div class="card card-pad mb-2xl fade-in-up">
+        <div class="empty-state">
+          <div class="empty-state-icon">📊</div>
+          <div class="empty-state-title">No Data Yet</div>
+          <div class="empty-state-desc">
+            Analyze some emails to see charts and statistics here.
+          </div>
+          <a href="/analyzer" class="btn btn-primary btn-lg mt-md">
+            🔍 Analyze an Email
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Model Metrics Detail -->
+      <div class="card card-pad-lg mb-2xl fade-in-up">
+        <div class="flex justify-between items-center mb-xl" style="flex-wrap:wrap;gap:16px;">
+          <div>
+            <h2 class="font-bold" style="font-size:var(--text-2xl);">
+              🎯 ML Model Performance
+            </h2>
+            <p class="text-secondary mt-sm" style="font-size:var(--text-sm);">
+              Evaluated on held-out test set (20% of dataset)
+            </p>
+          </div>
+          <div class="badge badge-cyan" style="padding:8px 16px;font-size:var(--text-sm);">
+            Multinomial Naive Bayes
+          </div>
+        </div>
+
+        {% set bar_colors = {'cyan': '#00d4ff', 'green': '#00e676', 'purple': '#9f68f5', 'yellow': '#ffb300'} %}
+        <div class="grid-4">
+          {% for key, label, color, desc in [
+              ('accuracy',  'Accuracy',  'cyan',   'Overall correct predictions'),
+              ('precision', 'Precision', 'green',  'Spam caught / flagged'),
+              ('recall',    'Recall',    'purple', 'Actual spam identified'),
+              ('f1_score',  'F1 Score',  'yellow', 'Harmonic mean of P & R'),
+          ] %}
+          <div class="metric-card card card-pad">
+            <div class="metric-value text-{{ color }}"
+                 data-counter="{{ model_metrics[key] }}"
+                 data-suffix="%">{{ model_metrics[key] }}%</div>
+            <div class="metric-label">{{ label }}</div>
+            <div class="text-muted" style="font-size:var(--text-xs);margin-top:4px;">{{ desc }}</div>
+            <div class="metric-bar-wrap w-full">
+              <div class="metric-bar-fill"
+                   data-progress="{{ model_metrics[key] }}"
+                   style="width:0%;background:{{ bar_colors[color] }};"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- History Table -->
+      <div class="card card-pad-lg fade-in-up">
+        <div class="flex justify-between items-center mb-lg" style="flex-wrap:wrap;gap:16px;">
+          <h2 class="font-bold" style="font-size:var(--text-2xl);">📜 Scan History</h2>
+          <div style="display:flex;gap:8px;">
+            <button id="download-csv-btn" class="btn btn-secondary btn-sm">
+              📥 Export CSV
+            </button>
+            <button id="clear-history-btn" class="btn btn-sm"
+                    style="background:rgba(255,23,68,0.1);color:var(--red);border:1px solid rgba(255,23,68,0.3);">
+              🗑️ Clear History
+            </button>
+          </div>
+        </div>
+
+        {% if history %}
+        <!-- Filter Controls -->
+        <div class="history-controls mb-lg">
+          <input type="text" id="history-search" class="form-input"
+                 placeholder="🔍 Search email content…" />
+          <select id="history-filter" class="form-input">
+            <option value="all">All Results</option>
+            <option value="spam">Spam Only</option>
+            <option value="ham">Legitimate Only</option>
+          </select>
+        </div>
+
+        <div class="history-table-wrap">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th data-sort="timestamp">🕐 Timestamp</th>
+                <th>📧 Email Preview</th>
+                <th data-sort="label">🏷️ Classification</th>
+                <th data-sort="confidence">🎯 Confidence</th>
+                <th>⚠️ Keywords</th>
+                <th>🔗 Actions</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody">
+              {% for item in history %}
+              <tr data-spam="{{ 'true' if item.is_spam else 'false' }}">
+                <!-- Timestamp -->
+                <td class="mono" style="white-space:nowrap;font-size:var(--text-xs);">
+                  {{ item.timestamp }}
+                </td>
+                <!-- Preview -->
+                <td>
+                  <div class="history-preview">{{ item.email_preview }}</div>
+                </td>
+                <!-- Classification -->
+                <td>
+                  <span class="badge {{ 'badge-spam' if item.is_spam else 'badge-ham' }}">
+                    {{ item.label|upper }}
+                  </span>
+                </td>
+                <!-- Confidence -->
+                <td class="confidence-col">
+                  <span class="{{ 'text-red' if item.is_spam else 'text-green' }}">
+                    {{ item.confidence }}%
+                  </span>
+                </td>
+                <!-- Keywords -->
+                <td>
+                  {% if item.keywords %}
+                    <span class="badge badge-warn" style="font-size:var(--text-xs);">
+                      {{ item.keywords|length }} keywords
+                    </span>
+                  {% else %}
+                    <span class="text-muted" style="font-size:var(--text-xs);">—</span>
+                  {% endif %}
+                </td>
+                <!-- Actions -->
+                <td>
+                  <span class="badge badge-cyan" style="font-size:var(--text-xs);">
+                    ID:{{ item.id }}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% else %}
+        <!-- Empty History -->
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <div class="empty-state-title">No scan history</div>
+          <div class="empty-state-desc">Your analysis history will appear here after you scan emails.</div>
+          <a href="/analyzer" class="btn btn-primary mt-md">🔍 Analyze an Email</a>
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-copy">🛡️ SpamShield AI — ML-Powered Email Security · Built with Flask &amp; Chart.js</div>
+      <div class="footer-links">
+        <a href="/" class="footer-link">Home</a>
+        <a href="/analyzer" class="footer-link">Analyzer</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

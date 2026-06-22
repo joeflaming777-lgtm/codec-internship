@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="SpamShield AI – Intelligent ML-powered email spam classifier. Detect spam instantly with advanced machine learning and explainable AI." />
+  <title>SpamShield AI – Intelligent Spam Email Classifier</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+  <!-- Open Graph -->
+  <meta property="og:title"       content="SpamShield AI – Intelligent Spam Classifier" />
+  <meta property="og:description" content="Advanced ML-powered email security powered by TF-IDF and Naive Bayes." />
+  <meta property="og:type"        content="website" />
+</head>
+<body>
+
+<!-- ── Loading Screen ───────────────────────────────────────────── -->
+<div id="loading-screen">
+  <div class="loader-logo">🛡️</div>
+  <div class="loader-text">SpamShield AI</div>
+  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+  <p class="text-muted" style="font-size:0.8rem;margin-top:8px;">Initializing security engine…</p>
+</div>
+
+<!-- ── Navigation ───────────────────────────────────────────────── -->
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+  <div class="navbar-inner">
+    <a href="/" class="nav-logo" aria-label="SpamShield AI Home">
+      <div class="nav-logo-icon">🛡️</div>
+      <span class="nav-logo-text">SpamShield</span>
+      <span class="nav-logo-badge">AI</span>
+    </a>
+
+    <ul class="nav-links" role="list">
+      <li><a href="/"           class="nav-link" data-page="home">🏠 Dashboard</a></li>
+      <li><a href="/analyzer"   class="nav-link" data-page="analyzer">🔍 Analyzer</a></li>
+      <li><a href="/dashboard"  class="nav-link" data-page="dashboard">📊 Analytics</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" title="Toggle theme">☀️</button>
+      <a href="/analyzer" class="btn btn-primary btn-sm">Analyze Email</a>
+      <button id="hamburger" class="hamburger" aria-label="Open menu">☰</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Mobile Menu ──────────────────────────────────────────────── -->
+<div id="mobile-menu" class="mobile-menu" role="navigation">
+  <a href="/"          class="nav-link" data-page="home">🏠 Dashboard</a>
+  <a href="/analyzer"  class="nav-link" data-page="analyzer">🔍 Analyzer</a>
+  <a href="/dashboard" class="nav-link" data-page="dashboard">📊 Analytics</a>
+</div>
+
+<!-- ── Main Content ─────────────────────────────────────────────── -->
+<main class="page-wrapper">
+
+  <!-- ── Hero ────────────────────────────────────────────────────── -->
+  <section class="hero" aria-label="Hero section">
+    <div class="hero-bg-grid"></div>
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+
+    <div class="container">
+      <div class="hero-content fade-in-up">
+        <div class="hero-eyebrow">
+          <span>🛡️</span>
+          AI-Powered Email Security
+        </div>
+
+        <h1 class="hero-title">
+          Detect Spam with<br/>
+          <span class="gradient-text">Machine Intelligence</span>
+        </h1>
+
+        <p class="hero-desc">
+          SpamShield AI uses advanced TF-IDF vectorization and Multinomial Naive Bayes 
+          to analyze email content in milliseconds — with explainable AI that tells you 
+          <em>exactly</em> why an email is flagged.
+        </p>
+
+        <div class="hero-cta">
+          <a href="/analyzer" class="btn btn-primary btn-xl" id="hero-analyze-btn">
+            🔍 Analyze an Email
+          </a>
+          <a href="/dashboard" class="btn btn-secondary btn-xl">
+            📊 View Analytics
+          </a>
+        </div>
+
+        <div class="hero-stats">
+          <div>
+            <div class="hero-stat-value gradient-text"
+                 data-counter="{{ model_metrics.accuracy }}"
+                 data-suffix="%">{{ model_metrics.accuracy }}%</div>
+            <div class="hero-stat-label">Detection Accuracy</div>
+          </div>
+          <div>
+            <div class="hero-stat-value gradient-text"
+                 data-counter="{{ model_metrics.precision }}"
+                 data-suffix="%">{{ model_metrics.precision }}%</div>
+            <div class="hero-stat-label">Precision</div>
+          </div>
+          <div>
+            <div class="hero-stat-value gradient-text"
+                 data-counter="{{ model_metrics.f1_score }}"
+                 data-suffix="%">{{ model_metrics.f1_score }}%</div>
+            <div class="hero-stat-label">F1 Score</div>
+          </div>
+          <div>
+            <div class="hero-stat-value gradient-text"
+                 data-counter="{{ stats.total }}">&lt;1s</div>
+            <div class="hero-stat-label">Analysis Time</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Animated Shield -->
+    <div class="hero-visual" aria-hidden="true">
+      <div class="shield-wrap">
+        <div class="shield-ring shield-ring-1"></div>
+        <div class="shield-ring shield-ring-2"></div>
+        <div class="shield-ring shield-ring-3"></div>
+        <div class="shield-core">🛡️</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Stats Overview ───────────────────────────────────────────── -->
+  <section class="section" aria-label="Statistics overview">
+    <div class="container">
+      <div class="grid-4">
+        <!-- Total Scanned -->
+        <div class="card card-pad stat-card fade-in-up stagger-1">
+          <div class="stat-card-header">
+            <div class="stat-card-icon cyan">📧</div>
+            <span class="stat-badge up">Live</span>
+          </div>
+          <div class="stat-value gradient-text"
+               data-counter="{{ stats.total }}">{{ stats.total }}</div>
+          <div class="stat-label">Total Emails Scanned</div>
+        </div>
+
+        <!-- Spam Detected -->
+        <div class="card card-pad stat-card fade-in-up stagger-2">
+          <div class="stat-card-header">
+            <div class="stat-card-icon red">⚠️</div>
+            {% if stats.total > 0 %}
+              <span class="stat-badge down">
+                {{ ((stats.spam / stats.total) * 100)|round(1) }}%
+              </span>
+            {% else %}
+              <span class="stat-badge up">0%</span>
+            {% endif %}
+          </div>
+          <div class="stat-value gradient-text-spam"
+               data-counter="{{ stats.spam }}">{{ stats.spam }}</div>
+          <div class="stat-label">Spam Emails Detected</div>
+        </div>
+
+        <!-- Safe Emails -->
+        <div class="card card-pad stat-card fade-in-up stagger-3">
+          <div class="stat-card-header">
+            <div class="stat-card-icon green">✅</div>
+            {% if stats.total > 0 %}
+              <span class="stat-badge up">
+                {{ ((stats.ham / stats.total) * 100)|round(1) }}%
+              </span>
+            {% else %}
+              <span class="stat-badge up">0%</span>
+            {% endif %}
+          </div>
+          <div class="stat-value gradient-text-safe"
+               data-counter="{{ stats.ham }}">{{ stats.ham }}</div>
+          <div class="stat-label">Safe Emails Detected</div>
+        </div>
+
+        <!-- Accuracy -->
+        <div class="card card-pad stat-card fade-in-up stagger-4">
+          <div class="stat-card-header">
+            <div class="stat-card-icon purple">🎯</div>
+            <span class="stat-badge up">ML</span>
+          </div>
+          <div class="stat-value gradient-text"
+               data-counter="{{ model_metrics.accuracy }}"
+               data-suffix="%">{{ model_metrics.accuracy }}%</div>
+          <div class="stat-label">Detection Accuracy</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Features ─────────────────────────────────────────────────── -->
+  <section class="section" aria-label="Features">
+    <div class="container">
+      <div class="text-center mb-2xl">
+        <div class="section-label">⚡ Capabilities</div>
+        <h2 class="section-title">Enterprise-Grade<br/><span class="gradient-text">Email Protection</span></h2>
+        <p class="section-subtitle" style="margin:0 auto;">
+          Built with production-quality ML infrastructure — the same techniques used by 
+          real-world email security platforms.
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card card-pad feature-card fade-in-up stagger-1">
+          <div class="feature-icon" style="background:var(--cyan-glow);border-color:rgba(0,212,255,0.2);">🤖</div>
+          <div class="feature-title">ML-Powered Detection</div>
+          <p class="feature-desc">
+            TF-IDF vectorization converts email text into numerical features. 
+            Multinomial Naive Bayes classifier achieves {{ model_metrics.accuracy }}% accuracy 
+            on the test dataset.
+          </p>
+        </div>
+
+        <div class="card card-pad feature-card fade-in-up stagger-2">
+          <div class="feature-icon" style="background:var(--purple-glow);border-color:rgba(124,58,237,0.2);">🧠</div>
+          <div class="feature-title">Explainable AI</div>
+          <p class="feature-desc">
+            SpamShield doesn't just say "spam" — it explains <em>why</em>. Dynamic 
+            analysis reveals suspicious keywords, urgency patterns, and phishing signals.
+          </p>
+        </div>
+
+        <div class="card card-pad feature-card fade-in-up stagger-3">
+          <div class="feature-icon" style="background:var(--green-glow);border-color:rgba(0,230,118,0.2);">🔍</div>
+          <div class="feature-title">Keyword Highlighting</div>
+          <p class="feature-desc">
+            Instantly spot red flags. Detected spam keywords are highlighted as 
+            visual badges, giving you a clear picture of email content risk.
+          </p>
+        </div>
+
+        <div class="card card-pad feature-card fade-in-up stagger-4">
+          <div class="feature-icon" style="background:var(--yellow-glow);border-color:rgba(255,179,0,0.2);">📊</div>
+          <div class="feature-title">Analytics Dashboard</div>
+          <p class="feature-desc">
+            Track your scanning history with real-time analytics. 
+            Visualize spam vs ham ratios, confidence distributions, and model 
+            performance metrics with Chart.js.
+          </p>
+        </div>
+
+        <div class="card card-pad feature-card fade-in-up stagger-5">
+          <div class="feature-icon" style="background:var(--red-glow);border-color:rgba(255,23,68,0.2);">🚨</div>
+          <div class="feature-title">Risk Level Indicator</div>
+          <p class="feature-desc">
+            Three-tier risk scoring — Safe, Medium Risk, and High Risk — 
+            with animated pulse indicators and color-coded badges for rapid assessment.
+          </p>
+        </div>
+
+        <div class="card card-pad feature-card fade-in-up stagger-6">
+          <div class="feature-icon" style="background:var(--cyan-glow);border-color:rgba(0,212,255,0.2);">📄</div>
+          <div class="feature-title">PDF Report Export</div>
+          <p class="feature-desc">
+            Generate professional analysis reports exportable as PDF. Download 
+            full scan history as CSV for offline analysis or compliance records.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- ── Security Tips ─────────────────────────────────────────────── -->
+  <section class="section" aria-label="Email security tips">
+    <div class="container">
+      <div class="text-center mb-2xl">
+        <div class="section-label">💡 Security Tips</div>
+        <h2 class="section-title">Stay Safe Online</h2>
+      </div>
+
+      <div class="grid-2">
+        <div class="tip-card fade-in-up stagger-1">
+          <div class="tip-icon">🔗</div>
+          <div class="tip-text">
+            <strong>Verify links before clicking</strong> — Hover over links to see the real URL. 
+            Legitimate companies don't use random domains or URL shorteners in security emails.
+          </div>
+        </div>
+        <div class="tip-card fade-in-up stagger-2">
+          <div class="tip-icon">📬</div>
+          <div class="tip-text">
+            <strong>Check the sender's address</strong> — Phishing emails often use addresses 
+            that look official but have subtle misspellings (e.g., "paypa1.com" instead of "paypal.com").
+          </div>
+        </div>
+        <div class="tip-card fade-in-up stagger-3">
+          <div class="tip-icon">⏱️</div>
+          <div class="tip-text">
+            <strong>Urgency is a red flag</strong> — Legitimate organizations don't create 
+            panic. Phrases like "Act now!" or "Expires in 24 hours!" are classic pressure tactics.
+          </div>
+        </div>
+        <div class="tip-card fade-in-up stagger-4">
+          <div class="tip-icon">🎁</div>
+          <div class="tip-text">
+            <strong>If it sounds too good to be true, it is</strong> — You didn't win a lottery 
+            you didn't enter. Free prizes, unclaimed inheritances, and miracle cures are scams.
+          </div>
+        </div>
+        <div class="tip-card fade-in-up stagger-5">
+          <div class="tip-icon">🔒</div>
+          <div class="tip-text">
+            <strong>Never share credentials via email</strong> — No bank or legitimate service 
+            will ever ask for your password, PIN, or full SSN through email.
+          </div>
+        </div>
+        <div class="tip-card fade-in-up stagger-6">
+          <div class="tip-icon">🛡️</div>
+          <div class="tip-text">
+            <strong>Use AI-powered tools like SpamShield</strong> — When in doubt, paste the 
+            email content into SpamShield AI for an instant machine-learning classification.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA Banner ────────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="container">
+      <div class="card card-pad-lg text-center fade-in-up"
+           style="background:linear-gradient(135deg,rgba(124,58,237,0.15) 0%,rgba(0,212,255,0.1) 100%);
+                  border-color:rgba(0,212,255,0.25);">
+        <div style="font-size:60px;margin-bottom:var(--space-lg);">🛡️</div>
+        <h2 class="section-title" style="font-size:var(--text-4xl);">
+          Ready to Shield Your Inbox?
+        </h2>
+        <p class="section-subtitle" style="margin:0 auto var(--space-2xl);">
+          Paste any suspicious email and get an instant AI-powered verdict with detailed explanation.
+        </p>
+        <div class="flex justify-center gap-md" style="flex-wrap:wrap;">
+          <a href="/analyzer" class="btn btn-primary btn-xl">🔍 Start Analyzing</a>
+          <a href="/dashboard" class="btn btn-secondary btn-xl">📊 View Analytics</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── Footer ────────────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-copy">
+        🛡️ SpamShield AI — Built with Python Flask, scikit-learn &amp; TF-IDF · Internship Portfolio Project
+      </div>
+      <div class="footer-links">
+        <a href="/" class="footer-link">Home</a>
+        <a href="/analyzer" class="footer-link">Analyzer</a>
+        <a href="/dashboard" class="footer-link">Analytics</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Scripts -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

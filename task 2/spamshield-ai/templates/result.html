@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="SpamShield AI Classification Result – Detailed spam analysis with confidence score and explainable AI." />
+  <title>
+    {% if result.is_spam %}⚠️ SPAM Detected{% else %}✅ Legitimate Email{% endif %}
+    – SpamShield AI
+  </title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <style>
+    .result-page {
+      min-height: calc(100vh - 64px);
+      background: var(--grad-hero);
+      padding: var(--space-3xl) 0;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: var(--space-xl);
+      align-items: start;
+      margin-top: var(--space-2xl);
+    }
+
+    .gauge-row {
+      display: flex;
+      gap: var(--space-xl);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .prob-row {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .prob-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+
+    .keywords-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      padding: var(--space-lg) 0;
+    }
+
+    .no-keywords {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .email-preview-box {
+      background: var(--bg-glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 200px;
+      overflow-y: auto;
+      line-height: 1.6;
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+    }
+
+    .sidebar-sticky {
+      position: sticky;
+      top: calc(64px + 20px);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+
+    .confidence-ring-label {
+      font-size: var(--text-2xl);
+      font-weight: 800;
+    }
+
+    @media (max-width: 900px) {
+      .result-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar-sticky {
+        position: static;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .gauge-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar" role="navigation">
+    <div class="navbar-inner">
+      <a href="/" class="nav-logo">
+        <div class="nav-logo-icon">🛡️</div>
+        <span class="nav-logo-text">SpamShield</span>
+        <span class="nav-logo-badge">AI</span>
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="/" class="nav-link" data-page="home">🏠 Dashboard</a></li>
+        <li><a href="/analyzer" class="nav-link" data-page="analyzer">🔍 Analyzer</a></li>
+        <li><a href="/dashboard" class="nav-link" data-page="dashboard">📊 Analytics</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">☀️</button>
+        <button id="hamburger" class="hamburger" aria-label="Open menu">☰</button>
+      </div>
+    </div>
+  </nav>
+
+  <div id="mobile-menu" class="mobile-menu">
+    <a href="/" class="nav-link">🏠 Dashboard</a>
+    <a href="/analyzer" class="nav-link">🔍 Analyzer</a>
+    <a href="/dashboard" class="nav-link">📊 Analytics</a>
+  </div>
+
+  <!-- Hidden data element for JS -->
+  <div id="result-data" data-spam="{{ 'true' if result.is_spam else 'false' }}"
+    data-confidence="{{ result.confidence }}" data-spam-prob="{{ result.spam_probability }}"
+    data-timestamp="{{ result.timestamp }}"
+    data-copy="SpamShield AI Result&#10;Classification: {{ result.label|upper }}&#10;Spam Probability: {{ result.spam_probability }}%&#10;Confidence: {{ result.confidence }}%&#10;Risk: {{ result.risk.level }}&#10;Analyzed: {{ result.timestamp }}"
+    style="display:none;"></div>
+
+  <main class="page-wrapper">
+    <div class="result-page">
+      <div class="container">
+
+        <!-- Breadcrumb -->
+        <nav aria-label="Breadcrumb" class="fade-in">
+          <div
+            style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-xl);">
+            <a href="/" style="color:var(--text-muted);transition:color .2s;"
+              onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-muted)'">Home</a>
+            <span>›</span>
+            <a href="/analyzer" style="color:var(--text-muted);transition:color .2s;"
+              onmouseover="this.style.color='var(--cyan)'"
+              onmouseout="this.style.color='var(--text-muted)'">Analyzer</a>
+            <span>›</span>
+            <span style="color:var(--text-primary);">Result</span>
+          </div>
+        </nav>
+
+        <!-- Page Title -->
+        <div class="fade-in-up">
+          <div class="section-label">🔬 Analysis Complete</div>
+          <h1 class="section-title">
+            Classification <span class="gradient-text">Result</span>
+          </h1>
+          <p class="section-subtitle">
+            Analyzed at {{ result.timestamp }} &nbsp;·&nbsp;
+            {{ result.word_count }} words &nbsp;·&nbsp; {{ result.char_count }} characters
+          </p>
+        </div>
+
+        <div class="result-grid">
+
+          <!-- ── Main Results Panel ──────────────────────────────────── -->
+          <div style="display:flex;flex-direction:column;gap:var(--space-xl);">
+
+            <!-- Verdict Banner -->
+            <div class="verdict-banner {{ 'verdict-spam' if result.is_spam else 'verdict-ham' }} fade-in-up stagger-1">
+              <div class="verdict-icon-wrap">
+                {{ '🚨' if result.is_spam else '✅' }}
+              </div>
+              <div class="verdict-info">
+                <div class="verdict-title">
+                  {{ 'SPAM' if result.is_spam else 'LEGITIMATE' }}
+                </div>
+                <div class="verdict-subtitle">
+                  {% if result.is_spam %}
+                  This email has been classified as spam with {{ result.spam_probability }}% confidence.
+                  {% else %}
+                  This email appears to be legitimate with {{ result.ham_probability }}% confidence.
+                  {% endif %}
+                </div>
+                <div class="mt-md">
+                  <span class="badge {{ 'badge-spam' if result.is_spam else 'badge-ham' }}"
+                    style="font-size:var(--text-sm);padding:6px 16px;">
+                    {{ result.label|upper }}
+                  </span>
+                  &nbsp;
+                  <span class="badge badge-cyan" style="font-size:var(--text-sm);padding:6px 16px;">
+                    ID: {{ result.id }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Confidence Score Card -->
+            <div class="card card-pad fade-in-up stagger-2">
+              <h2 class="font-bold mb-xl" style="font-size:var(--text-xl);">
+                📊 Confidence Score
+              </h2>
+
+              <div class="gauge-row">
+                <!-- SVG Circular Gauge -->
+                <div class="gauge-container">
+                  <div class="gauge-svg-wrap">
+                    <svg viewBox="0 0 200 200" width="200" height="200" style="transform:rotate(-90deg);">
+                      <!-- Background track -->
+                      <circle cx="100" cy="100" r="80" fill="none" stroke="var(--border-card)" stroke-width="12" />
+                      <!-- Value arc -->
+                      <circle id="gauge-circle" cx="100" cy="100" fill="none" stroke-width="12" stroke-linecap="round"
+                        data-value="{{ result.spam_probability }}"
+                        data-is-spam="{{ 'true' if result.is_spam else 'false' }}" />
+                    </svg>
+                    <div class="gauge-center-text">
+                      <div class="gauge-percent {{ 'text-red' if result.is_spam else 'text-green' }}"
+                        id="gauge-percent">0%</div>
+                      <div class="gauge-label">Spam Prob.</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Probability Bars -->
+                <div class="prob-row">
+                  <!-- Spam Probability -->
+                  <div>
+                    <div class="prob-label-row">
+                      <span>🚨 Spam Probability</span>
+                      <span class="text-red">{{ result.spam_probability }}%</span>
+                    </div>
+                    <div class="progress-bar-wrap mt-sm">
+                      <div class="progress-bar-fill progress-spam" data-progress="{{ result.spam_probability }}"
+                        style="width:0%;"></div>
+                    </div>
+                  </div>
+
+                  <!-- Ham Probability -->
+                  <div>
+                    <div class="prob-label-row">
+                      <span>✅ Legitimate Probability</span>
+                      <span class="text-green">{{ result.ham_probability }}%</span>
+                    </div>
+                    <div class="progress-bar-wrap mt-sm">
+                      <div class="progress-bar-fill progress-safe" data-progress="{{ result.ham_probability }}"
+                        style="width:0%;"></div>
+                    </div>
+                  </div>
+
+                  <!-- Overall Confidence -->
+                  <div>
+                    <div class="prob-label-row">
+                      <span>🎯 Model Confidence</span>
+                      <span class="text-cyan">{{ result.confidence }}%</span>
+                    </div>
+                    <div class="progress-bar-wrap mt-sm">
+                      <div class="progress-bar-fill progress-cyan" data-progress="{{ result.confidence }}"
+                        style="width:0%;"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Risk Level -->
+            <div class="card card-pad fade-in-up stagger-2">
+              <h2 class="font-bold mb-lg" style="font-size:var(--text-xl);">🚦 Risk Assessment</h2>
+              <div class="risk-indicator {{ result.risk.class }}">
+                <div class="risk-dot"></div>
+                <div>
+                  <div class="risk-text-title">{{ result.risk.level }}</div>
+                  <div class="risk-text-sub">
+                    {% if result.risk.class == 'risk-high' %}
+                    High spam probability detected. Do NOT click links or provide personal information.
+                    {% elif result.risk.class == 'risk-medium' %}
+                    Moderate risk detected. Exercise caution and verify the sender before responding.
+                    {% else %}
+                    This email appears safe. Standard email hygiene practices still apply.
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Suspicious Keywords -->
+            <div class="card card-pad fade-in-up stagger-3">
+              <h2 class="font-bold" style="font-size:var(--text-xl);">
+                🔑 Suspicious Keywords Detected
+                {% if result.keywords %}
+                <span class="badge badge-warn ml-sm" style="font-size:var(--text-xs);vertical-align:middle;">
+                  {{ result.keywords|length }} found
+                </span>
+                {% endif %}
+              </h2>
+
+              <div class="keywords-wrap">
+                {% if result.keywords %}
+                {% for kw in result.keywords %}
+                <span class="keyword-tag">⚠️ {{ kw }}</span>
+                {% endfor %}
+                {% else %}
+                <span class="no-keywords">✅ No suspicious keywords detected</span>
+                {% endif %}
+              </div>
+
+              {% if result.urgency_phrases %}
+              <div class="mt-md">
+                <p class="form-label mb-sm">⏱️ Urgency Phrases</p>
+                <div class="keywords-wrap" style="gap:var(--space-xs);">
+                  {% for phrase in result.urgency_phrases %}
+                  <span class="keyword-tag"
+                    style="background:rgba(255,23,68,0.1);color:var(--red);border-color:rgba(255,23,68,0.25);">
+                    🔴 {{ phrase }}
+                  </span>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Explainable AI -->
+            <div class="card card-pad fade-in-up stagger-4">
+              <h2 class="font-bold mb-lg" style="font-size:var(--text-xl);">
+                🧠 Why was this email classified as
+                <span class="{{ 'text-red' if result.is_spam else 'text-green' }}">
+                  {{ result.label|upper }}
+                </span>?
+              </h2>
+
+              <div class="reason-list">
+                {% for reason in result.reasons %}
+                <div class="reason-item" data-delay="{{ loop.index0 * 0.08 }}">
+                  <span class="reason-icon">{{ '⚠️' if result.is_spam else '✅' }}</span>
+                  <span class="reason-text">{{ reason }}</span>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Email Preview -->
+            <div class="card card-pad fade-in-up stagger-5">
+              <h2 class="font-bold mb-md" style="font-size:var(--text-xl);">📧 Email Content Analyzed</h2>
+              <div class="email-preview-box">{{ email_text }}</div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="card card-pad fade-in-up stagger-6">
+              <h2 class="font-bold mb-lg" style="font-size:var(--text-base);">⚡ Actions</h2>
+              <div class="action-row">
+                <a href="/analyzer" class="btn btn-primary">
+                  🔍 Analyze Another
+                </a>
+                <button id="copy-result-btn" class="btn btn-secondary">
+                  📋 Copy Result
+                </button>
+                <button id="export-pdf-btn" class="btn btn-secondary">
+                  📄 Export PDF
+                </button>
+                <a href="/dashboard" class="btn btn-secondary">
+                  📊 View Analytics
+                </a>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ── Sidebar ──────────────────────────────────────────────── -->
+          <div class="sidebar-sticky">
+
+            <!-- Quick Summary -->
+            <div class="card card-pad fade-in-up stagger-2">
+              <h3 class="font-bold mb-lg" style="font-size:var(--text-base);">📋 Quick Summary</h3>
+
+              <div class="info-row">
+                <span class="info-row-label">Verdict</span>
+                <span class="info-row-value {{ 'text-red' if result.is_spam else 'text-green' }}">
+                  {{ result.label|upper }}
+                </span>
+              </div>
+              <div class="info-row">
+                <span class="info-row-label">Spam Prob.</span>
+                <span class="info-row-value">{{ result.spam_probability }}%</span>
+              </div>
+              <div class="info-row">
+                <span class="info-row-label">Ham Prob.</span>
+                <span class="info-row-value">{{ result.ham_probability }}%</span>
+              </div>
+              <div class="info-row">
+                <span class="info-row-label">Confidence</span>
+                <span class="info-row-value text-cyan">{{ result.confidence }}%</span>
+              </div>
+              <div class="info-row">
+                <span class="info-row-label">Risk Level</span>
+                <span class="info-row-value">{{ result.risk.level }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-row-label">Keywords</span>
+                <span class="info-row-value">{{ result.keywords|length }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-row-label">Words</span>
+                <span class="info-row-value mono">{{ result.word_count }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-row-label">Analysis ID</span>
+                <span class="info-row-value mono text-muted">{{ result.id }}</span>
+              </div>
+            </div>
+
+
+            <!-- Recommendation -->
+            <div class="card card-pad fade-in-up stagger-4 {% if result.is_spam %}recommendation-spam{% else %}recommendation-ham{% endif %}">
+              <h3 class="font-bold mb-sm" style="font-size:var(--text-base);">
+                {{ '🚫 Recommendation' if result.is_spam else '✅ Recommendation' }}
+              </h3>
+              <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:1.6;">
+                {% if result.is_spam %}
+                <strong style="color:var(--red);">Do not engage</strong> with this email.
+                Delete it immediately. Do not click any links, download attachments,
+                or provide personal information.
+                {% else %}
+                This email appears to be <strong style="color:var(--green);">legitimate</strong>.
+                However, always verify unexpected requests for sensitive information
+                through official channels.
+                {% endif %}
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-copy">🛡️ SpamShield AI — ML-Powered Email Security</div>
+        <div class="footer-links">
+          <a href="/" class="footer-link">Home</a>
+          <a href="/analyzer" class="footer-link">Analyzer</a>
+          <a href="/dashboard" class="footer-link">Analytics</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/result.js') }}"></script>
+</body>
+
+</html>
