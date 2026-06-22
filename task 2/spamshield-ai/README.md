@@ -211,37 +211,6 @@ For production use, you can replace this with the **UCI SMS Spam Collection** or
 
 ---
 
-## 🧪 ML Model Details
-
-### Text Preprocessing Pipeline
-
-```python
-def clean_text(text):
-    text = text.lower()
-    text = re.sub(r'http\S+|www\S+', ' url ', text)     # URLs
-    text = re.sub(r'\S+@\S+', ' email ', text)           # Emails
-    text = re.sub(r'\d+', ' num ', text)                 # Numbers
-    text = re.sub(r'[punctuation]', ' ', text)           # Punctuation
-    return text.strip()
-```
-
-### TF-IDF Configuration
-
-```python
-TfidfVectorizer(
-    max_features = 5000,
-    ngram_range  = (1, 2),   # unigrams + bigrams
-    sublinear_tf = True,     # log(tf) normalisation
-    min_df       = 1
-)
-```
-
-### Classifier
-
-```python
-MultinomialNB(alpha=0.1)   # Laplace smoothing
-```
-
 ### Evaluation Metrics (typical results on test set)
 
 | Metric | Score |
@@ -279,9 +248,11 @@ MultinomialNB(alpha=0.1)   # Laplace smoothing
 
 ## 👨‍💻 Author
 
-**Joe Flaming**  
-Software Engineering Intern  
-Built as Task 2 – AI/ML Portfolio Project
+**Joe Flaming** &nbsp;![M](https://img.shields.io/badge/M-blue?style=flat-square)  
+Codec Technologies AI Intern — June 2026
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-blue?logo=linkedin&style=flat-square)](https://linkedin.com/in/joeflaming777)
+[![GitHub](https://img.shields.io/badge/GitHub-black?logo=github&style=flat-square)](https://github.com/joeflaming777)
 
 ---
 
